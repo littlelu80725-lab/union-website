@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Union — Case Flow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { brand: '#1a1a2e', accent: '#e94560', light: '#f8f8f8' } } }
+    }
+  </script>
+  <script>
+    if (localStorage.getItem('union-theme') === 'dark') document.documentElement.classList.add('dark');
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+    * { margin:0; padding:0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #ffffff; color: #1a1a2e; }
+    .nav-link { position: relative; color: #1a1a2e; }
+    .nav-link::after { content:''; position:absolute; bottom:-4px; left:0; width:0; height:2px; background:#e94560; transition:width 0.3s; }
+    .nav-link:hover::after { width:100%; color:#e94560; }
+    .btn-primary { background: linear-gradient(135deg, #e94560, #ff6b6b); transition: all 0.3s; color: #fff; }
+    .btn-primary:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(233,69,96,0.4); }
+    .section-label { letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.75rem; color: #e94560; font-weight: 700; }
+    .gradient-text { background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* Theme toggle */
+    .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 9999px;
+      border: 1.5px solid #e5e7eb; font-size: 0.9rem;
+      cursor: pointer; transition: all 0.2s; background: #fff; user-select: none;
+    }
+    .theme-toggle:hover { border-color: #e94560; }
+
+    /* Language toggle */
+    .lang-toggle {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 9999px; border: 1.5px solid #e5e7eb;
+      font-size: 0.8rem; font-weight: 600; color: #6b7280;
+      cursor: pointer; transition: all 0.2s; background: #fff;
+      user-select: none;
+    }
+    .lang-toggle:hover { border-color: #e94560; color: #e94560; }
+    .lang-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: #e94560; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0f0f0; }
+    ::-webkit-scrollbar-thumb { background: #e94560; border-radius: 3px; }
+
+    /* ===== Dark Mode ===== */
+    html.dark body { background: #0d0d0f; color: #e4e4e7; }
+    html.dark nav { background: rgba(13,13,15,0.82) !important; border-color: #27272a !important; }
+    html.dark .nav-link { color: #e4e4e7; }
+    html.dark .nav-link:hover::after { background: #e94560; }
+    html.dark .lang-toggle { background: #18181b; border-color: #3f3f46; color: #a1a1aa; }
+    html.dark .lang-toggle:hover { border-color: #e94560; color: #e94560; }
+    html.dark .theme-toggle { background: #18181b; border-color: #3f3f46; }
+    html.dark .section-label { color: #f87171; }
+    html.dark #nav-logo { color: #f4f4f5 !important; }
+    html.dark .gradient-text { background: linear-gradient(135deg, #f87171, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    html.dark h1, html.dark h2, html.dark h3 { color: #f4f4f5; }
+    html.dark .btn-primary:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(233,69,96,0.4); }
+    html.dark footer, html.dark #site-footer { background: #111113 !important; border-color: #27272a !important; }
+    html.dark .bg-gray-50 { background: #111113 !important; }
+    html.dark .bg-white { background: #0d0d0f !important; }
+    html.dark .border-gray-100 { border-color: #27272a !important; }
+    html.dark .text-gray-500 { color: #a1a1aa !important; }
+    html.dark .text-gray-400 { color: #71717a !important; }
+    html.dark .text-\[\#1a1a2e\] { color: #f4f4f5 !important; }
+    html.dark ::-webkit-scrollbar-track { background: #18181b; }
+
+    /* Hero gradient */
+    .cf-hero-bg { background: linear-gradient(to bottom, #fff5f5, #ffffff); }
+    html.dark .cf-hero-bg { background: linear-gradient(to bottom, #1a0a0e, #0d0d0f); }
+
+    /* Coverflow card fallback bg in dark */
+    html.dark .coverflow-card { background: #18181b; }
+
+    /* Global Tailwind overrides (matching index.html) */
+    html.dark .bg-white\/80 { background: rgba(13,13,15,0.8) !important; }
+    html.dark .bg-gray-100 { background: #18181b !important; }
+    html.dark .border-gray-200 { border-color: #3f3f46 !important; }
+    html.dark .hover\:text-\[\#1a1a2e\]:hover { color: #e4e4e7 !important; }
+
+    /* ===== COVER FLOW ===== */
+    .coverflow-container {
+      perspective: 1200px;
+      -webkit-perspective: 1200px;
+      width: 100%;
+      height: 520px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: pan-y pinch-zoom;
+    }
+    .coverflow-container:active { cursor: grabbing; }
+    .coverflow-container .reflection-mask {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 120px;
+      background: linear-gradient(to top, rgba(255,255,255,0.95), transparent);
+      pointer-events: none;
+      z-index: 5;
+    }
+    html.dark .coverflow-container .reflection-mask {
+      background: linear-gradient(to top, rgba(13,13,15,0.95), transparent);
+    }
+
+    .coverflow-card {
+      position: absolute;
+      width: 320px;
+      height: 420px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+                  opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1),
+                  box-shadow 0.4s ease;
+      transform-style: preserve-3d;
+      -webkit-transform-style: preserve-3d;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform, opacity;
+    }
+    .coverflow-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Card overlay with info */
+    .coverflow-card .card-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 40px 24px 24px;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .coverflow-card.active .card-overlay { opacity: 1; }
+    .coverflow-card .card-overlay h3 { color: #fff; font-size: 1.25rem; font-weight: 700; margin-bottom: 4px; }
+    .coverflow-card .card-overlay p { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
+    .coverflow-card .card-overlay .tag { color: #e94560; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; margin-bottom: 6px; }
+
+    /* Reflection effect */
+    .coverflow-card::after {
+      content: '';
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      height: 100%;
+      background: inherit;
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.25), transparent 50%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,0.25), transparent 50%);
+      transform: scaleY(-1);
+      pointer-events: none;
+      border-radius: 0 0 16px 16px;
+      z-index: -1;
+      filter: blur(2px);
+      -webkit-filter: blur(2px);
+    }
+
+    /* Active card glow */
+    .coverflow-card.active {
+      box-shadow: 0 30px 80px rgba(233,69,96,0.25), 0 10px 30px rgba(0,0,0,0.3);
+    }
+    html.dark .coverflow-card.active {
+      box-shadow: 0 30px 80px rgba(233,69,96,0.2), 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Navigation arrows */
+    .flow-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-70%);
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.9);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0,0,0,0.08);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 20;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .flow-arrow:hover { background: #e94560; color: #fff; transform: translateY(-70%) scale(1.1); box-shadow: 0 6px 24px rgba(233,69,96,0.4); }
+    .flow-arrow.left { left: 20px; }
+    .flow-arrow.right { right: 20px; }
+    html.dark .flow-arrow { background: rgba(30,30,30,0.9); border-color: rgba(255,255,255,0.1); color: #f4f4f5; }
+
+    /* Dot indicators */
+    .flow-dots {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+    .flow-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #d1d5db;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .flow-dot.active { background: #e94560; width: 24px; border-radius: 4px; }
+    html.dark .flow-dot { background: #3f3f46; }
+
+    /* Keyboard hint */
+    .kbd {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #6b7280;
+    }
+    html.dark .kbd { background: #27272a; border-color: #3f3f46; color: #a1a1aa; }
+
+    /* Slide-up animation */
+    .slide-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: slideUp 0.8s ease forwards;
+    }
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hero entrance animations */
+    .hero-enter {
+      opacity: 0; transform: translateY(30px);
+      animation: heroFadeUp 0.8s ease forwards;
+    }
+    .hero-enter-d1 { animation-delay: 0.1s; }
+    .hero-enter-d2 { animation-delay: 0.25s; }
+    .hero-enter-d3 { animation-delay: 0.4s; }
+    @keyframes heroFadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 767px) {
+      .coverflow-container { height: 380px; }
+      .coverflow-card { width: 220px; height: 290px; }
+      .flow-arrow { width: 36px; height: 36px; }
+      .flow-arrow.left { left: 8px; }
+      .flow-arrow.right { right: 8px; }
+    }
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .coverflow-container { height: 460px; }
+      .coverflow-card { width: 270px; height: 360px; }
+    }
+  </style>
+</head>
+<body class="bg-white text-[#1a1a2e]">
+
+  <!-- ===== NAV ===== -->
+  <nav class="fixed top-0 left-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="index.html" id="nav-logo" class="text-2xl font-black tracking-tight text-[#1a1a2e]">UNION</a>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+        <a href="index.html#work" class="nav-link" data-i18n="nav.work">Work</a>
+        <a href="index.html#capabilities" class="nav-link" data-i18n="nav.capabilities">Capabilities</a>
+        <a href="index.html#insights" class="nav-link" data-i18n="nav.insights">Insights</a>
+        <a href="case-flow.html" class="text-[#e94560] font-semibold">Case Flow</a>
+        <a href="contact.html" class="nav-link" data-i18n="nav.contact">Contact</a>
+        <button class="lang-toggle" onclick="toggleLang()"><span class="dot"></span><span class="lang-label">中文</span></button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><span class="theme-toggle-icon">🌙</span></button>
+        <a href="contact.html" class="btn-primary text-white text-sm font-bold px-5 py-2 rounded-full" data-i18n="nav.letstalk">Let's Talk</a>
+      </div>
+      <div class="md:hidden flex items-center gap-3">
+        <button class="lang-toggle" onclick="toggleLang()"><span class="dot"></span><span class="lang-label">中文</span></button>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"><span class="theme-toggle-icon">🌙</span></button>
+        <button class="text-[#1a1a2e] text-2xl" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">☰</button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-3">
+      <a href="index.html#work" class="block text-[#1a1a2e] py-1" data-i18n="nav.work">Work</a>
+      <a href="index.html#capabilities" class="block text-[#1a1a2e] py-1" data-i18n="nav.capabilities">Capabilities</a>
+      <a href="index.html#insights" class="block text-[#1a1a2e] py-1" data-i18n="nav.insights">Insights</a>
+      <a href="case-flow.html" class="block text-[#e94560] py-1 font-semibold">Case Flow</a>
+      <a href="contact.html" class="block text-[#1a1a2e] py-1" data-i18n="nav.contact">Contact</a>
+      <a href="contact.html" class="block btn-primary text-white text-sm font-bold px-5 py-2 rounded-full inline-block w-fit mt-2" data-i18n="nav.letstalk">Let's Talk</a>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="pt-28 pb-8 cf-hero-bg" style="min-height:200px;">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <p class="section-label mb-3 hero-enter hero-enter-d1" data-i18n="caseflow.badge">Interactive Showcase</p>
+      <h1 class="text-5xl md:text-7xl font-black mb-6 text-[#1a1a2e] hero-enter hero-enter-d2">
+        <span data-i18n="caseflow.title.1">Case</span> <span class="gradient-text" data-i18n="caseflow.title.accent">Flow</span>
+      </h1>
+      <p class="text-gray-500 text-lg max-w-xl mx-auto hero-enter hero-enter-d3" data-i18n="caseflow.subtitle">
+        Swipe, drag, or use arrow keys to explore our featured work.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== COVER FLOW ===== -->
+  <section class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="coverflow-container" id="coverflow">
+        <!-- Cards injected by JS -->
+        <div class="reflection-mask"></div>
+        <div class="flow-arrow left" id="flowPrev">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <div class="flow-arrow right" id="flowNext">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <div class="flow-dots" id="dots"></div>
+      <p class="text-center mt-4 text-gray-400 text-sm">
+        <span class="kbd">←</span> <span class="kbd">→</span> <span data-i18n="caseflow.hint">or drag to navigate</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== ACTIVE CASE DETAIL ===== -->
+  <section class="py-16 bg-gray-50" id="case-detail">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <p class="text-xs uppercase tracking-widest text-gray-400 mb-2" id="detail-tag">Insurance</p>
+      <h2 class="text-3xl md:text-4xl font-black text-[#1a1a2e] mb-4" id="detail-title">Quility</h2>
+      <p class="text-gray-500 text-lg leading-relaxed mb-8" id="detail-desc">Shopping for insurance doesn't have to be prickly.</p>
+      <a href="contact.html" class="btn-primary text-white font-bold px-8 py-3 rounded-full text-sm shadow-lg shadow-red-200" data-i18n="caseflow.detail.cta">
+        Get in Touch →
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer id="site-footer" class="py-8 border-t border-gray-100 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-400">
+      <span data-i18n="footer.copyright">© 2026 Valtech Solutions, LLC. All Rights Reserved.</span>
+      <div class="flex gap-6">
+        <a href="#" class="hover:text-[#1a1a2e]" data-i18n="footer.privacy">Privacy Policy</a>
+        <a href="#" class="hover:text-[#1a1a2e]" data-i18n="footer.cookies">Cookie Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="theme.js"></script>
+  <script src="i18n.js"></script>
+  <script>
+    // ===== CASE DATA =====
+    const cases = [
+      { img: 'pic/case1.png', title: 'Quility', tag: 'Insurance', desc: 'Shopping for insurance doesn\'t have to be prickly. We redesigned the entire customer journey for a leading insurtech brand.' },
+      { img: 'pic/case2.png', title: 'NRG', tag: 'Energy', desc: 'What Power Should Be. A bold brand transformation for one of America\'s largest energy providers.' },
+      { img: 'pic/case3.png', title: 'Yale', tag: 'Security', desc: 'A New Anthem For Smarter Security. Reimagining the Yale brand for the connected home era.' },
+      { img: 'pic/case4.png', title: 'CRVA', tag: 'Tourism', desc: 'Charlotte\'s Got A Lot. Driving tourism and economic growth through integrated campaign design.' },
+      { img: 'pic/case5.png', title: 'WORX', tag: 'Tools', desc: 'Proven Power at retail. Building a direct-to-consumer platform that drives measurable growth.' },
+      { img: 'pic/case6.png', title: 'Husqvarna', tag: 'Outdoor', desc: 'Working at the cutting edge. A digital-first approach to outdoor equipment marketing.' },
+    ];
+
+    // ===== INIT =====
+    const container = document.getElementById('coverflow');
+    const dotsContainer = document.getElementById('dots');
+    const N = cases.length;
+    let currentIndex = N + 2;
+    let isDragging = false;
+    let startX = 0;
+    let deltaX = 0;
+    let isNavigating = false;
+    let lastNavTime = 0;
+
+    // Create 3 copies of cards for seamless looping
+    const reflectionMask = container.querySelector('.reflection-mask');
+    for (let copy = 0; copy < 3; copy++) {
+      cases.forEach((c, i) => {
+        const card = document.createElement('div');
+        card.className = 'coverflow-card';
+        card.dataset.originalIndex = i;
+        card.innerHTML = `
+          <img src="${c.img}" alt="${c.title}" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(135deg,#fef2f2,#fff)';" />
+          <div class="card-overlay">
+            <p class="tag" data-i18n-idx="${i}">${c.tag}</p>
+            <h3>${c.title}</h3>
+          </div>
+        `;
+        container.insertBefore(card, reflectionMask);
+      });
+    }
+
+    // Create dots
+    cases.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'flow-dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goTo(N + i);
+      dotsContainer.appendChild(dot);
+    });
+
+    // Arrow buttons
+    document.getElementById('flowPrev').addEventListener('click', () => navigate(-1));
+    document.getElementById('flowNext').addEventListener('click', () => navigate(1));
+
+    // ===== POSITIONING =====
+    function getOriginalIndex(idx) { return ((idx % N) + N) % N; }
+
+    function updateCards() {
+      const cards = container.querySelectorAll('.coverflow-card');
+      const isMobile = window.innerWidth < 768;
+      const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+      const translateXBase = isMobile ? 160 : isTablet ? 210 : 260;
+      const translateZCenter = isMobile ? 80 : 120;
+      const sideAngle = 55;
+
+      cards.forEach((card, i) => {
+        const offset = i - currentIndex;
+
+        // Reset
+        card.classList.remove('active');
+        card.style.opacity = '0';
+        card.style.pointerEvents = 'none';
+        card.style.transform = 'translateX(0) translateZ(0) rotateY(0deg)';
+
+        if (Math.abs(offset) > 4) return;
+
+        card.style.opacity = '1';
+
+        if (offset === 0) {
+          card.classList.add('active');
+          card.style.transform = 'translateX(' + deltaX + 'px) translateZ(' + translateZCenter + 'px) rotateY(0deg) scale(1)';
+          card.style.zIndex = 10;
+          card.style.pointerEvents = 'auto';
+        } else if (offset > 0) {
+          card.style.transform = 'translateX(' + (offset * translateXBase + deltaX * 0.5) + 'px) translateZ(' + (translateZCenter - offset * 60) + 'px) rotateY(-' + sideAngle + 'deg) scale(' + (1 - offset * 0.12) + ')';
+          card.style.zIndex = 10 - offset;
+          card.style.opacity = 1 - offset * 0.25;
+        } else {
+          card.style.transform = 'translateX(' + (offset * translateXBase + deltaX * 0.5) + 'px) translateZ(' + (translateZCenter + offset * 60) + 'px) rotateY(' + sideAngle + 'deg) scale(' + (1 + offset * 0.12) + ')';
+          card.style.zIndex = 10 + offset;
+          card.style.opacity = 1 + offset * 0.25;
+        }
+      });
+
+      // Update dots & detail based on original index
+      const origIdx = getOriginalIndex(currentIndex);
+      const dots = dotsContainer.querySelectorAll('.flow-dot');
+      dots.forEach((d, i) => d.classList.toggle('active', i === origIdx));
+      const c = cases[origIdx];
+      const lang = window.currentLang || 'en';
+      const t = window.translations?.[lang];
+      document.getElementById('detail-tag').textContent = t?.['caseflow.case' + origIdx + '.tag'] || c.tag;
+      document.getElementById('detail-title').textContent = t?.['caseflow.case' + origIdx + '.title'] || c.title;
+      document.getElementById('detail-desc').textContent = t?.['caseflow.case' + origIdx + '.desc'] || c.desc;
+    }
+
+    let snapTimer = null;
+
+    function goTo(index) {
+      if (isNavigating) return;
+      isNavigating = true;
+      currentIndex = index;
+      deltaX = 0;
+      updateCards();
+
+      // After transition, silently snap to middle copy
+      clearTimeout(snapTimer);
+      snapTimer = setTimeout(function() {
+        if (currentIndex < N || currentIndex >= N * 2) {
+          const allCards = container.querySelectorAll('.coverflow-card');
+          allCards.forEach(function(c) { c.style.transition = 'none'; });
+          currentIndex = N + getOriginalIndex(currentIndex);
+          updateCards();
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              allCards.forEach(function(c) { c.style.transition = ''; });
+              isNavigating = false;
+            });
+          });
+        } else {
+          isNavigating = false;
+        }
+      }, 520);
+    }
+
+    function navigate(dir) {
+      const now = Date.now();
+      if (now - lastNavTime < 500) return;
+      lastNavTime = now;
+      goTo(currentIndex + dir);
+    }
+
+    // ===== KEYBOARD =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') navigate(-1);
+      if (e.key === 'ArrowRight') navigate(1);
+    });
+
+    // ===== MOUSE / TOUCH DRAG =====
+    container.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      startX = e.clientX;
+      deltaX = 0;
+      container.querySelectorAll('.coverflow-card').forEach(function(c) { c.style.transition = 'none'; });
+    });
+    container.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      deltaX = e.clientX - startX;
+      updateCards();
+    });
+    container.addEventListener('mouseup', function(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      container.querySelectorAll('.coverflow-card').forEach(function(c) { c.style.transition = ''; });
+      const diff = e.clientX - startX;
+      if (Math.abs(diff) > 50) { navigate(diff < 0 ? 1 : -1); lastWheelNavTime = Date.now(); }
+      else { deltaX = 0; updateCards(); }
+    });
+    container.addEventListener('mouseleave', function() {
+      if (isDragging) {
+        isDragging = false;
+        container.querySelectorAll('.coverflow-card').forEach(function(c) { c.style.transition = ''; });
+        deltaX = 0;
+        updateCards();
+      }
+    });
+
+    // Touch
+    container.addEventListener('touchstart', function(e) {
+      isDragging = true;
+      startX = e.touches[0].clientX;
+      deltaX = 0;
+      container.querySelectorAll('.coverflow-card').forEach(function(c) { c.style.transition = 'none'; });
+    }, { passive: false });
+    container.addEventListener('touchmove', function(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      deltaX = e.touches[0].clientX - startX;
+      updateCards();
+    }, { passive: false });
+    container.addEventListener('touchend', function(e) {
+      if (!isDragging) return;
+      isDragging = false;
+      container.querySelectorAll('.coverflow-card').forEach(function(c) { c.style.transition = ''; });
+      const diff = deltaX;
+      if (Math.abs(diff) > 40) { navigate(diff < 0 ? 1 : -1); lastWheelNavTime = Date.now(); }
+      else { deltaX = 0; updateCards(); }
+    });
+
+    // ===== MOUSE WHEEL =====
+    let lastWheelNavTime = 0;
+    const WHEEL_COOLDOWN = 600;
+    container.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      if (isNavigating) return;
+      const now = Date.now();
+      if (now - lastWheelNavTime < WHEEL_COOLDOWN) return;
+      const dy = e.deltaY || e.deltaX || 0;
+      if (Math.abs(dy) < 10) return;
+      lastWheelNavTime = now;
+      navigate(dy > 0 ? 1 : -1);
+    }, { passive: false });
+
+    // ===== INIT =====
+    updateCards();
+    window.addEventListener('resize', updateCards);
+  </script>
+</body>
+</html>
